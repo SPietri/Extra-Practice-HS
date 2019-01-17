@@ -1,0 +1,40 @@
+ 
+# all_census <- read_csv("category311_census_delayed_per_tract.csv")
+ 
+# Remove leading zeros...
+the_census$TRACTCE10 <- sub("^0+", "", the_census$TRACTCE10)
+census_tract$TRACTCE10 <- sub("^0+", "", census_tract$TRACTCE10)
+
+my_census <- census_tract %>%
+ filter(TRACTCE10 %in% the_census$TRACTCE10)
+
+write.csv(my_census, "Census_data_109tracts_Jan16.csv")
+
+call_data <- call[ , 1:29]
+write.csv(call_data, "call_data311_Jan17.csv")
+write.csv(call, "combined_census_and_call_data_Jan17.csv")
+
+#####################################################################################################################
+# Now make the kmeans data set which includes, 
+# 1) The number of calls per tract
+# 2) ofcourse the tract number itself, 
+# 3) the scalled values of the numbers by department/issue.type (let's just do by category to keep it small)
+
+# Remove the leading zeros in the call data
+call_data$TRACTCE10 <- sub("^0+", "", call_data$TRACTCE10)
+kmeans_dataset <- as.data.frame(table(call_data[,c("TRACTCE10")]))
+colnames(kmeans_dataset) <- c("TRACTCE10","total")
+View(kmeans_dataset)
+
+#Now count the categories and create a wide data frame
+categories <- call_data %>%
+  dplyr::select(category, TRACTCE10)%>%
+  group_by(TRACTCE10, category)%>%
+  summarise(sum = count(TRACTCE10))
+
+issues <- categories %>%
+    group_by(Issue.Type, TRACTCE10)%>%
+    summarize(n= n_distinct(Issue.Type))
+
+# Go to wide data frame
+spread()
