@@ -126,3 +126,34 @@ ggplot(data = irma_chart, aes(x = Date, y = n, group = 1))+
   theme_minimal() +
   labs(title = "Communications Department Calls", y= "Number of Calls")
 
+####################################################################################################################################
+# K means clustering
+#kmeans_data <- read.csv("kmeans_scaled_Jan17.csv")
+set.seed(20)
+km <- kmeans(kmeans_data[ , c(-1,-12)], centers =6, nstart = 1000)
+str(km)
+km$size
+# [1] 45 13 22 11  6  8
+
+cluster <- as.data.frame(km$cluster)
+kmeans_and_cluster <- cbind(kmeans_data,cluster)
+
+names(kmeans_and_cluster)[which(names(kmeans_and_cluster) == "km$cluster")] <- "cluster"
+
+write.csv(kmeans_and_cluster, "kmeans_and_cluster_Jan18.csv")
+
+# Create the bar chart chart
+# Code by Hye Seon 
+centers.vector <- t(as.table(km$centers))
+centers.percent <- sweep(centers.vector,1,FUN="*",100)
+colors <- brewer.pal(nrow(centers.vector), "Paired")
+par(xpd=TRUE, mar = c(5, 4, 4, 2) + 0.1 + c(0,0,0,3))
+
+center <- as.data.frame(centers.percent)
+ggplot(center, aes(x= Var2, y =Freq, fill= Var1))+
+  geom_bar(stat = "identity", position=position_dodge())+
+  theme_minimal() +
+  labs(title = "Centers for 6 Clusters", x= "Cluster", y= "Percent(%)", fill = "Category")
+
+# Create the radar chart
+  
