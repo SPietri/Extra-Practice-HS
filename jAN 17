@@ -1,4 +1,5 @@
  
+ 
 # all_census <- read_csv("category311_census_delayed_per_tract.csv")
  
 # Remove leading zeros...
@@ -26,15 +27,31 @@ kmeans_dataset <- as.data.frame(table(call_data[,c("TRACTCE10")]))
 colnames(kmeans_dataset) <- c("TRACTCE10","total")
 View(kmeans_dataset)
 
+write.csv(kmeans_dataset, "kmeans.csv")
+
 #Now count the categories and create a wide data frame
 categories <- call_data %>%
   dplyr::select(category, TRACTCE10)%>%
-  group_by(TRACTCE10, category)%>%
-  summarise(sum = count(TRACTCE10))
+  dplyr::group_by(TRACTCE10, category)%>%
+  dplyr::summarise(count = n())
 
 issues <- categories %>%
     group_by(Issue.Type, TRACTCE10)%>%
     summarize(n= n_distinct(Issue.Type))
 
 # Go to wide data frame
-spread()
+categories <- spread(categories, category, count, fill =0)
+
+categories <- categories %>%
+  left_join(kmeans, by = "TRACTCE10")
+categories <- categories[ , -12]
+
+write.csv(categories, "kmeans_not_scaled_Jan17.csv")
+
+# Scale the data
+kmeans_dataset <- categories[categories$total > 1,]
+kmeans_dataset[,c(-1,-12)] <- sweep(kmeans_dataset[,c(-1,-12)],1,FUN="/",kmeans_dataset$total)
+kmdata <- kmeans_dataset[,c(-1,-12)]
+# kmdata <- scale(kmdata)
+
+write.csv(kmeans_dataset, "kmeans_scaled_Jan17.csv")
