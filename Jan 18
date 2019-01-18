@@ -105,3 +105,24 @@ call_data %>%
 #8 PW ROAD AND BRIDGE SR    Public_Works_Road_And_~  1976  3.08
 #9 POTHOLE                  Public_Works_Road_And_~  1782  2.77
 #10 ANIMAL BITE TO A PERSON  Animal_Services         1769  2.75
+
+#Calls categorized as communication
+irma <- call_data %>%
+  filter(Case.Owner == "Communications_Department")
+  select(Issue.Type, Date)%>%
+  group_by(Issue.Type, Date) %>%
+  summarize(n = n())
+  
+irma %>% arrange((Date)) %>%
+  distinct(TRACTCE10)
+
+irma_chart <-irma %>% 
+  select(Date) %>% 
+  group_by(Date)%>%
+  summarise(n = n())
+
+ggplot(data = irma_chart, aes(x = Date, y = n, group = 1))+
+  geom_line(color = "#00AFBB", size = 2) +
+  theme_minimal() +
+  labs(title = "Communications Department Calls", y= "Number of Calls")
+
