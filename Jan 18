@@ -51,17 +51,33 @@ library(ggplot2)
 #"#00AFBB", "#E7B800", "#AA4371",
 #"#FF0000FF",""
 
-time_plot_caseowner <- ggplot(time_chart, aes(x = year, y =n, group = Case.Owner)) + 
+# This will get the right number of colors in the pallette we want
+
+# Manually change the color for the variable you want to stand out
+rainbow(10, s = 0.5)
+colors <- c("#FF8080FF", "#FFCC80FF", "mediumblue", "#99FF80FF",
+            "#80FFB3FF" ,"#80FFFFFF", "#80B3FFFF" ,"#9980FFFF",
+            "#E680FFFF", "#FF80CCFF")
+
+time_plot_caseowner <- ggplot(time_chart, aes(x = date2, y =n, group = Case.Owner)) + 
   geom_line(aes(color = Case.Owner), size = 1) +
-  scale_color_manual(values = rainbow(10, s= 0.5)) +
-  scale_y_continuous(breaks=seq(0, 7000, 500))+
+  scale_color_manual(values = colors) +
+  scale_y_continuous(breaks=seq(0, 200, 25))+
   theme_minimal() +
-  labs(title = "Category Calls by Year", y= "Number of Calls", x = "Year")+
+  labs(title = "Category Calls by Year", y= "Number of Calls", x = "Year", color= "Category")+
   scale_x_date(limits = c(min, max))
 
+time_plot_year <- ggplot(time_chart, aes(x = year, y =n, group = Case.Owner)) + 
+  geom_line(aes(color= Case.Owner), size = 1) +
+  scale_color_manual(values = colors) +
+  scale_y_continuous(breaks=seq(0, 7000, 1000))+
+  theme_minimal() +
+  labs(title = "Category Calls by Year", y= "Number of Calls", x = "Year", color = "Category")
+
+
 # Change axis to get rid of those from 2018
-min <- as.Date("2012-12-31")
-max <- as.Date("2017-12-31")
+min <- as.Date("2012-12-31", "%Y-%m-%d")
+max <- as.Date("2017-12-31", "%Y-%m-%d")
 p + scale_x_date(limits = c(min, max))
 
 # Change the scale
@@ -126,7 +142,6 @@ ggplot(data = irma_chart, aes(x = Date, y = n, group = 1))+
   theme_minimal() +
   labs(title = "Communications Department Calls", y= "Number of Calls")
 
-####################################################################################################################################
 # K means clustering
 #kmeans_data <- read.csv("kmeans_scaled_Jan17.csv")
 set.seed(20)
@@ -152,8 +167,11 @@ par(xpd=TRUE, mar = c(5, 4, 4, 2) + 0.1 + c(0,0,0,3))
 center <- as.data.frame(centers.percent)
 ggplot(center, aes(x= Var2, y =Freq, fill= Var1))+
   geom_bar(stat = "identity", position=position_dodge())+
+  scale_fill_manual(values = colors)+
   theme_minimal() +
   labs(title = "Centers for 6 Clusters", x= "Cluster", y= "Percent(%)", fill = "Category")
 
 # Create the radar chart
+# Hs firt creates a new data set that groups the data by cluster and then finds the mean census variable
+# infor for all of the 
   
