@@ -1,0 +1,107 @@
+# Descriptive Statistics
+
+# Census data descriptive Statistics
+# The file below contains census data: 
+# census <- read_csv("F:/Geo Batch adds/HS Project sets/Hs Sets old data/Census_data_109tracts_Jan16.csv")
+
+# Use the summary tools package to get a page print out of the data
+library(summarytools)
+dfSummary(census)
+
+# Descriptive statistics of methods used to report 311 cases
+call_type <- call_data %>%
+  select(Method.Received) %>%
+  group_by(Method.Received) %>%
+  summarise(n = n(), percent = (n/64252) * 100)%>%
+  arrange(n)
+
+call_type %>%
+  filter(n <= 274) %>%
+  summarise(sum_n = sum(n), sum_p = sum(percent))
+
+# Summary Statistics on 311 Data
+# Create a time plot of the call types
+# Inorder to plot a time series I would need to transform the structure of the data. I need to
+# change the data to where the dates are on the left hand side as in they are our rows. The categories
+# of case owners and issue types need to be the column headings and the frequency of these per date 
+# is what will populate the table. 
+call_data$date2 <-as.Date(call_data$Date)
+call_data$year <- fix_year(call_data$Created.Year.Month)
+
+#Code below uses only year
+time_chart <- call_data %>%
+  select(Case.Owner, year) %>%
+  group_by(year, Case.Owner) %>%
+  summarise(n = n()) 
+
+# Code below uses date year month and day
+time_chart <- call_data %>%
+  select(Case.Owner, date2) %>%
+  group_by(date2, Case.Owner) %>%
+  summarise(n = n())
+
+# Code below spread the data
+#time_chart <- spread(time_chart, Case.Owner, n, fill =0)
+
+# Plot the graph. 
+# I used this website for help: http://www.sthda.com/english/articles/32-r-graphics-essentials/128-plot-time-series-data-using-ggplot/#plot-multiple-time-series-data
+# https://ggplot2.tidyverse.org/reference/scale_manual.html 
+library(ggplot2)
+
+#"#00AFBB", "#E7B800", "#AA4371",
+#"#FF0000FF",""
+
+time_plot_caseowner <- ggplot(time_chart, aes(x = year, y =n, group = Case.Owner)) + 
+  geom_line(aes(color = Case.Owner), size = 1) +
+  scale_color_manual(values = rainbow(10, s= 0.5)) +
+  scale_y_continuous(breaks=seq(0, 7000, 500))+
+  theme_minimal() +
+  labs(title = "Category Calls by Year", y= "Number of Calls", x = "Year")+
+  scale_x_date(limits = c(min, max))
+
+# Change axis to get rid of those from 2018
+min <- as.Date("2012-12-31")
+max <- as.Date("2017-12-31")
+p + scale_x_date(limits = c(min, max))
+
+# Change the scale
+scale_y_continuous(breaks=seq(0, 10, 0.25))
+
+# Finding the number of cases per Case.Owner
+call_data %>%
+  select(Case.Owner) %>%
+  group_by(Case.Owner) %>%
+  summarise(n= n(), perc = n/64252 *100)
+
+#Case.Owner                                   n    perc
+#<chr>                                    <int>   <dbl>
+#1 Animal_Services                          33445  52.1   
+#2 COM_Code_Enforcement                     10841  16.9   
+#3 Communications_Department                  630  0.981 
+#4 Public_Works_Construction_6_60              78  0.121 
+#5 Public_Works_Right_Of_Way_4_60              13  0.0202
+#6 Public_Works_Road_And_Bridges_16_60      10733  16.7   
+#7 Public_Works_Traffic_Engineering_10_60    2900  4.51  
+#8 Public_Works_traffic_Signals_And_Signs_~  3892  6.06  
+#9 RAAM_27_93                                1115  1.74  
+#10 Regulatory_and_Economic_Resources        605   0.942 
+
+# Find the most frequent issue types
+call_data %>%
+  select(Issue.Type, Case.Owner)%>%
+  group_by(Issue.Type, Case.Owner)%>%
+  summarise(n = n(), perc = n/64252 *100)%>%
+  dplyr::arrange(desc(perc))
+
+#Issue.Type               Case.Owner                  n  perc
+#<chr>                    <chr>                   <int> <dbl>
+#1 ILLEGAL DUMPING / LITTER COM_Code_Enforcement    10841  16.9 
+#2 STRAY / DOG-AT-LARGE     Animal_Services          7634  11.9 
+#3 PET ACCOUNT UPDATE       Animal_Services          7131  11.1 
+#4 GRAFFITI ON COUNTY PROP~ Public_Works_Road_And_~  5203  8.10
+#5 INJURED ANIMAL           Animal_Services          3659  5.69
+#6 ANIMAL CRUELTY INVESTIG~ Animal_Services          3218  5.01
+#7 STRAY DOG PICK UP - MD   Animal_Services          2524  3.93
+#8 PW ROAD AND BRIDGE SR    Public_Works_Road_And_~  1976  3.08
+#9 POTHOLE                  Public_Works_Road_And_~  1782  2.77
+#10 ANIMAL BITE TO A PERSON  Animal_Services         1769  2.75
