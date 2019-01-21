@@ -1,0 +1,93 @@
+# K means clustering
+#kmeans_data <- read.csv("kmeans_scaled_Jan17.csv")
+set.seed(20)
+km <- kmeans(kmeans_data[ , c(-1,-2,-13)], centers =6, nstart = 1000)
+str(km)
+km$size
+# From January 18th: 45 13 22 11  6  8
+# Round 1 Jan 21 :  45  8 22 13 11  6
+# Round 2: 22  6 13 45  8 11
+# Round 3: 6  8 22 45 13 11
+# Round 4: 8 13 45  6 11 22
+# Round 5: 13 45  8 22  6 11
+# Round 6: 22  6  8 11 45 13
+# Round 7: 6  8 22 11 45 13
+# Round 8: 45  8 22 11 13  6
+# Round 9: 6  8 45 11 22 13
+# Round 10: 8 11 45 22  6 13
+# Set seed: 45 13 22 11  6  8
+
+# Get the cluster number for each observation
+cluster <- as.data.frame(km$cluster)
+kmeans_and_cluster <- cbind(kmeans_data,cluster)
+
+# Change the name of the cluster column
+names(kmeans_and_cluster)[which(names(kmeans_and_cluster) == "km$cluster")] <- "cluster"
+
+# Save this data set for future reference
+write.csv(kmeans_and_cluster, "kmeans_and_cluster_Jan18.csv")
+
+# Create the bar chart chart
+# Code by Hye Seon 
+centers.vector <- t(as.table(km$centers))
+centers.percent <- sweep(centers.vector,1,FUN="*",100)
+colors <- brewer.pal(nrow(centers.vector), "Paired")
+par(xpd=TRUE, mar = c(5, 4, 4, 2) + 0.1 + c(0,0,0,3))
+
+# Code by Hye Seon
+barplot(centers.percent, 
+        main=paste0("Centers for the ",k," clusters"),
+        xlab="clusters",
+        ylab="percent (%)",
+        col=colors, 
+        beside=TRUE
+)
+
+# Graph using ggplot
+center <- as.data.frame(centers.percent)
+ggplot(center, aes(x= Var2, y =Freq, fill= Var1))+
+  geom_bar(stat = "identity", position=position_dodge())+
+  scale_fill_manual(values = colors)+
+  theme_minimal() +
+  labs(title = "Centers for 6 Clusters", x= "Cluster", y= "Percent(%)", fill = "Category")
+
+# Create the radar chart
+# Hs firt creates a new data set that groups the data by cluster and then finds the mean census variable
+# info for all of the clusters.
+radar_data <- kmeans_and_cluster %>%
+  select(cluster, TRACTCE10) 
+radar_data <- census %>%
+  left_join(radar_data, by = "TRACTCE10")
+
+# 3 tracts will be removed because they only had one call
+radar_data <- na.omit(radar_data)
+radarsafe<-radar_data
+radar_data <- radar_data %>% 
+  group_by(cluster) %>%
+  summarise(Median_Income = mean(med_income),
+            PerCapita_Income= mean(per_cap_income), 
+            Under_Poverty = mean(perc_under_poverty), 
+            Unemployment_Rate = mean(perc_unemployment_rate),
+            White = mean(perc_white), 
+            Black = mean(perc_aa), 
+            Hispanic = mean(perc_hispanic), 
+            Highschool = mean(perc_ed_high),
+            College = mean(perc_ed_college),
+            Graduate = mean(perc_ed_att_col_deg),
+            Non_Citizen = mean(perc_non_citizen)) %>%
+  arrange(cluster)
+
+# HS COde 
+cluster_census_mean.m <- as.matrix(radar_data)
+max_num <- max(cluster_census_mean.m[,4:12]) # calculate except median income
+max_income <- max(cluster_census_mean.m[,2]) # max median income
+adjust_value <- max_income/max_num
+# remove "per income capita" and "graduate or professional degree"
+cluster_census_mean.df <- cbind(radar_data[,2]/adjust_value)
+cluster_census_mean.df <- cbind(radar_data[,c(4:10,12)], 
+                                cluster_census_mean.df)
+num <- ncol(cluster_census_mean.df)
+
+rownames(cluster_census_mean.df) <- paste0("cluster", 1:k)
+cluster_census_mean.df <- rbind(rep(max_num,num) , rep(0,num) , cluster_census_mean.df)
+  
